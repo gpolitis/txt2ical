@@ -1,0 +1,5 @@
+A super-tiny utility that converts tasks in your TODOs in a text file into an iCalendar 
+file to make it possible to include in Thunderbird. Note that you need to copy/paste the
+cookies from Chrome to make this work. You would run it like this :
+
+    ./txt2ics.py todo.md
