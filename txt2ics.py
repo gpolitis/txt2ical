@@ -11,28 +11,40 @@ import re
 #logging.getLogger().setLevel(logging.DEBUG)
 
 STATUS_REGEX = r"^- \[( |x)\]"
-# https://www.rfc-editor.org/rfc/rfc5545#section-3.8.1.11
-KEYWORD_REGEX = r"^- (TODO|DONE|CANCELLED|NEEDS-ACTION|COMPLETED|IN-PROCESS)"
-KEYWORD_MAP = {'TODO': 'NEEDS-ACTION', 'DONE': 'COMPLETED'}
+KEYWORD_REGEX = r"^- (TODO|DONE|EXPIRED|CANCELLED|NEEDS-ACTION|COMPLETED|IN-PROCESS)"
+
+# Valid VTODO statuses are listed in the RFC https://www.rfc-editor.org/rfc/rfc5545#section-3.8.1.11
+# We mark cancelled as completed because Thunderbird shows cancelled tasks https://bugzilla.mozilla.org/show_bug.cgi?id=382363
+KEYWORD_MAP = {
+    'TODO': '',
+    'DONE': 'COMPLETED', 
+    'EXPIRED': 'COMPLETED',
+    'CANCELLED': 'COMPLETED'
+}
 
 def make_todo(line):
     rematch = re.match(STATUS_REGEX, line)
-    if not rematch:
-        rematch = re.match(KEYWORD_REGEX, line)
-        if not rematch:
-            return
-        else:
-            status = rematch.group(1)
-            if status in KEYWORD_MAP:
-                status = KEYWORD_MAP[status]
+    if rematch:
+        # Github-style task.
+        status = "DONE" if rematch.group(1) == "x" else "TODO"
     else:
-        status = "COMPLETED" if rematch.group(1) == "x" else "NEEDS-ACTION"
-
-
+        rematch = re.match(KEYWORD_REGEX, line)
+        if rematch:
+            # keyword-style task.
+            status = rematch.group(1)
+        else:
+            # not a task.
+            return
+    
     summary = line[len(rematch.group(0)):].strip()
     if len(summary) == 0:
+        # task without a summary.
         return
     
+    # map keywords -> vtodo status.
+    if status in KEYWORD_MAP:
+        status = KEYWORD_MAP[status]
+
     todo = Todo()
     todo["status"] = status
     todo["summary"] = summary
