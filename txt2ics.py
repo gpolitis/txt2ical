@@ -61,12 +61,19 @@ def make_calendar(infile):
 
 def txt2ics(args):
     cal = make_calendar(args.infile)
-    args.outfile.write(cal.to_ical().decode("utf-8"))
+    try:
+        # line endings are part of the iCal standard, so if we're writing to a file
+        # we need to write the bytes.
+        args.outfile.write(cal.to_ical())
+    except TypeError:
+        # Writing to stdout is a bit different, as it requires an str on Linux. On
+        # Windows stdout accepts a byte.
+        args.outfile.write(cal.to_ical().decode("utf-8"))
 
 load_dotenv()
 
 parser = argparse.ArgumentParser(description='Converts TODOs in a text file into an iCal file.')
 parser.add_argument('infile', nargs='?', type=argparse.FileType('r', encoding="utf-8"), default=os.getenv("infile"))
-parser.add_argument('outfile', nargs='?', type=argparse.FileType('w', encoding="utf-8"), default=os.getenv("outfile"))
+parser.add_argument('outfile', nargs='?', type=argparse.FileType('wb'), default=os.getenv("outfile"))
 
 txt2ics(parser.parse_args())
