@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
+import os
 from icalendar import Calendar, Todo
-import dateutil.parser 
 import sys
 import argparse
 import re
+from dotenv import load_dotenv
 
 #import logging
 #logging.basicConfig()
@@ -62,8 +63,10 @@ def txt2ics(args):
     cal = make_calendar(args.infile)
     args.outfile.write(cal.to_ical().decode("utf-8"))
 
+load_dotenv()
+
 parser = argparse.ArgumentParser(description='Converts TODOs in a text file into an iCal file.')
-parser.add_argument('--infile', type=argparse.FileType('r'))
-parser.add_argument('--outfile', nargs='?', type=argparse.FileType('w'), default=sys.stdout)
+parser.add_argument('infile', nargs='?', type=argparse.FileType('r', encoding="utf-8"), default=os.getenv("infile"))
+parser.add_argument('outfile', nargs='?', type=argparse.FileType('w', encoding="utf-8"), default=os.getenv("outfile"))
 
 txt2ics(parser.parse_args())
