@@ -2,14 +2,27 @@
 
 import os
 from icalendar import Calendar, Todo
-import sys
+import dateutil.parser
+from datetime import datetime
 import argparse
 import re
 from dotenv import load_dotenv
+import hashlib
 
-#import logging
-#logging.basicConfig()
-#logging.getLogger().setLevel(logging.DEBUG)
+# import logging
+# logging.basicConfig()
+# logging.getLogger().setLevel(logging.DEBUG)
+
+OPTIONAL_FIELDS = {
+    "due": {
+        "regex": r" due:([0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?) *",
+        "get_value": lambda rematch: dateutil.parser.isoparse(rematch.group(1)),
+    },
+    "start": {
+        "regex": r" start:([0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?) *",
+        "get_value": lambda rematch: dateutil.parser.isoparse(rematch.group(1)),
+    },
+}
 
 STATUS_REGEX = r"^- \[( |x)\]"
 KEYWORD_REGEX = r"^- (TODO|DONE|EXPIRED|CANCELLED|NEEDS-ACTION|COMPLETED|IN-PROCESS)"
@@ -17,10 +30,10 @@ KEYWORD_REGEX = r"^- (TODO|DONE|EXPIRED|CANCELLED|NEEDS-ACTION|COMPLETED|IN-PROC
 # Valid VTODO statuses are listed in the RFC https://www.rfc-editor.org/rfc/rfc5545#section-3.8.1.11
 # We mark cancelled as completed because Thunderbird shows cancelled tasks https://bugzilla.mozilla.org/show_bug.cgi?id=382363
 KEYWORD_MAP = {
-    'TODO': '',
-    'DONE': 'COMPLETED', 
-    'EXPIRED': 'COMPLETED',
-    'CANCELLED': 'COMPLETED'
+    "TODO": "",
+    "DONE": "COMPLETED",
+    "EXPIRED": "COMPLETED",
+    "CANCELLED": "COMPLETED",
 }
 
 def make_todo(line):
@@ -36,17 +49,26 @@ def make_todo(line):
         else:
             # not a task.
             return
-    
-    summary = line[len(rematch.group(0)):].strip()
+
+    summary = line[len(rematch.group(0)) :].strip()
     if len(summary) == 0:
         # task without a summary.
         return
-    
+
     # map keywords -> vtodo status.
     if status in KEYWORD_MAP:
         status = KEYWORD_MAP[status]
 
     todo = Todo()
+    for field_name in OPTIONAL_FIELDS:
+        field = OPTIONAL_FIELDS[field_name]
+        rematch = re.search(field["regex"], summary)
+        if rematch:
+            todo.add(field_name, field["get_value"](rematch))
+            summary = re.sub(field["regex"], " ", summary)
+
+    todo.add('uid', hashlib.sha256(line.encode('utf-8')).hexdigest())
+    todo.add('dtstamp', datetime.now())
     todo["status"] = status
     todo["summary"] = summary
     return todo
