@@ -36,6 +36,7 @@ KEYWORD_MAP = {
     "CANCELLED": "COMPLETED",
 }
 
+
 def make_todo(line):
     rematch = re.match(STATUS_REGEX, line)
     if rematch:
@@ -67,11 +68,12 @@ def make_todo(line):
             todo.add(field_name, field["get_value"](rematch))
             summary = re.sub(field["regex"], " ", summary)
 
-    todo.add('uid', hashlib.sha256(line.encode('utf-8')).hexdigest())
-    todo.add('dtstamp', datetime.now())
+    todo.add("uid", hashlib.sha256(line.encode("utf-8")).hexdigest())
+    todo.add("dtstamp", datetime.now())
     todo["status"] = status
     todo["summary"] = summary
     return todo
+
 
 def make_calendar(infile):
     cal = Calendar()
@@ -80,6 +82,7 @@ def make_calendar(infile):
         if todo:
             cal.add_component(todo)
     return cal
+
 
 def txt2ics(args):
     cal = make_calendar(args.infile)
@@ -92,10 +95,20 @@ def txt2ics(args):
         # Windows stdout accepts a byte.
         args.outfile.write(cal.to_ical().decode("utf-8"))
 
+
 load_dotenv()
 
-parser = argparse.ArgumentParser(description='Converts TODOs in a text file into an iCal file.')
-parser.add_argument('infile', nargs='?', type=argparse.FileType('r', encoding="utf-8"), default=os.getenv("infile"))
-parser.add_argument('outfile', nargs='?', type=argparse.FileType('wb'), default=os.getenv("outfile"))
+parser = argparse.ArgumentParser(
+    description="Converts TODOs in a text file into an iCal file."
+)
+parser.add_argument(
+    "infile",
+    nargs="?",
+    type=argparse.FileType("r", encoding="utf-8"),
+    default=os.getenv("infile"),
+)
+parser.add_argument(
+    "outfile", nargs="?", type=argparse.FileType("wb"), default=os.getenv("outfile")
+)
 
 txt2ics(parser.parse_args())
