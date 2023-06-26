@@ -22,6 +22,14 @@ OPTIONAL_FIELDS = {
         "regex": r" start:([0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?) *",
         "get_value": lambda rematch: dateutil.parser.isoparse(rematch.group(1)),
     },
+    "dtstamp": {
+        "regex": r" dtstamp:([0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?) *",
+        "get_value": lambda rematch: dateutil.parser.isoparse(rematch.group(1)),
+    },
+    "location": {
+        "regex": r" location:([^\s]+) *",
+        "get_value": lambda rematch: rematch.group(1),
+    }
 }
 
 STATUS_REGEX = r"^- \[( |x)\]"
@@ -69,7 +77,8 @@ def make_todo(line):
             summary = re.sub(field["regex"], " ", summary)
 
     todo.add("uid", hashlib.sha256(line.encode("utf-8")).hexdigest())
-    todo.add("dtstamp", datetime.now())
+    if not "dtstamp" in todo:
+        todo.add("dtstamp", datetime.now())
     todo["status"] = status
     todo["summary"] = summary
     return todo
