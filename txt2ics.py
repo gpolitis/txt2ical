@@ -29,6 +29,10 @@ OPTIONAL_FIELDS = {
     "location": {
         "regex": r" location:([^\s]+) *",
         "get_value": lambda rematch: rematch.group(1),
+    },
+    "categories": {
+        "regex": r" categories:([^\s]+) *",
+        "get_value": lambda rematch: rematch.group(1).split(','),
     }
 }
 
