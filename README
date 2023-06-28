@@ -1,6 +1,4 @@
 A super-tiny utility that converts your todo.txt file into an iCalendar file
 file. You would run it like this:
 
-    ./txt2ics.py todo.md -
-
-Note the dash character "-" at the end of the command that stands for stdout.
+    ./txt2ics.py todo.md

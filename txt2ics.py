@@ -115,12 +115,11 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument(
     "infile",
-    nargs="?",
     type=argparse.FileType("r", encoding="utf-8"),
     default=os.getenv("infile"),
 )
 parser.add_argument(
-    "outfile", nargs="?", type=argparse.FileType("wb"), default=os.getenv("outfile")
+    "--outfile", type=argparse.FileType("wb"), default=os.getenv("outfile") or "-"
 )
 
 txt2ics(parser.parse_args())
