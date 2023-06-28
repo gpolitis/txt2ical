@@ -13,7 +13,6 @@ import hashlib
 # logging.basicConfig()
 # logging.getLogger().setLevel(logging.DEBUG)
 
-# TODO add support for created & completed dates.
 # TODO add support for contexts (words that start with @) and projects (words that start with +).
 
 TAGS_REGEX = r"([^\s]+):([^\s]+)"
@@ -26,6 +25,9 @@ def parse_date(value):
 
 
 TAG_PARSE = {
+    "created": parse_date,
+    "completed": parse_date,
+    "status": lambda value: STATUS_MAP[value],
     "due": parse_date,
     "start": parse_date,
     "dtstamp": parse_date,
@@ -33,12 +35,18 @@ TAG_PARSE = {
     "categories": lambda value: value.split(","),
 }
 
-STATUS_REGEX = r"^- \[( |x)\]"
-KEYWORD_REGEX = r"^- (TODO|DONE|EXPIRED|CANCELLED|NEEDS-ACTION|COMPLETED|IN-PROCESS)"
+GH_REGEX = r"^- \[(?P<status> |x)\] (?:(\(?P<priority>[A-Z]\)) )?(?:(?P<completed>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?)( (?P<created>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?))?)?"
+KEYWORD_REGEX = (
+    r"^- (?P<status>TODO|DONE|EXPIRED|CANCELLED|NEEDS-ACTION|COMPLETED|IN-PROCESS)"
+)
+TDTXT_REGEX = r"^- (?:(?P<status>x) )?(?:(\(?P<priority>[A-Z]\)) )?(?:(?P<completed>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?)( (?P<created>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?))?)"
 
 # Valid VTODO statuses are listed in the RFC https://www.rfc-editor.org/rfc/rfc5545#section-3.8.1.11
 # We mark cancelled as completed because Thunderbird shows cancelled tasks https://bugzilla.mozilla.org/show_bug.cgi?id=382363
-KEYWORD_MAP = {
+STATUS_MAP = {
+    "x ": "COMPLETED",
+    "x": "COMPLETED",
+    " ": "",
     "TODO": "",
     "DONE": "COMPLETED",
     "EXPIRED": "COMPLETED",
@@ -47,35 +55,41 @@ KEYWORD_MAP = {
 
 
 def make_todo(line):
-    rematch = re.match(STATUS_REGEX, line)
+    tags = dict()
+
+    rematch = re.match(GH_REGEX, line, re.IGNORECASE)
     if rematch:
         # matched a Github-style task.
-        status = "DONE" if rematch.group(1) == "x" else "TODO"
+        tags.update(rematch.groupdict())
     else:
-        rematch = re.match(KEYWORD_REGEX, line)
+        rematch = re.match(KEYWORD_REGEX, line, re.IGNORECASE)
         if rematch:
             # matched a keyword-style task.
-            status = rematch.group(1)
+            tags.update(rematch.groupdict())
         else:
-            # doesn't look like a task.
-            return
+            rematch = re.match(TDTXT_REGEX, line, re.IGNORECASE)
+            if rematch:
+                # matched a todo.txt style task.
+                tags.update(rematch.groupdict())
+            else:
+                # doesn't look like a task.
+                return
 
     summary = line[len(rematch.group(0)) :].strip()
     if len(summary) == 0:
         # skip tasks without a summary.
         return
 
-    # map keywords -> vtodo status.
-    if status in KEYWORD_MAP:
-        status = KEYWORD_MAP[status]
-
     todo = Todo()
-    # map todo.txt tags -> vtodo fields.
-    for key, value in re.findall(TAGS_REGEX, summary):
-        if key in TAG_PARSE:
+
+    tags.update(dict(re.findall(TAGS_REGEX, summary)))
+
+    # map various parsed tags into vtodo tags.
+    for key, value in tags.items():
+        if value and key in TAG_PARSE:
             parse = TAG_PARSE[key]
             parsed_value = parse(value)
-            if value:
+            if parsed_value:
                 todo.add(key, parsed_value)
                 # cleanup the summary (note the space)
                 summary = summary.replace(" {}:{}".format(key, value), " ")
@@ -84,7 +98,6 @@ def make_todo(line):
     todo.add("uid", hashlib.sha256(line.encode("utf-8")).hexdigest())
     if not "dtstamp" in todo:
         todo.add("dtstamp", datetime.now())
-    todo["status"] = status
     todo["summary"] = summary
     return todo
 
