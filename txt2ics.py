@@ -13,13 +13,14 @@ import hashlib
 # logging.basicConfig()
 # logging.getLogger().setLevel(logging.DEBUG)
 
-# TODO add support for contexts (words that start with @) and projects (words that start with +).
+# TODO add support for todo.txt contexts (words that start with @) and projects (words that start with +).
+# TODO add support for [x]it! (harder because subtasks require context and icalendar does not support sub-tasks)
 # TODO add some fuzzy logic to handle minor typos
 # TODO add proper unit tests
 
 TAGS_PATTERN = r"([^\s]+):([^\s]+)"
 DATE_PATTERN = r"([0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?)"
-GH_PATTERN = r"^- \[(?P<status> |x)\] (?:(\(?P<priority>[A-Z]\)) )?(?:(?P<completed>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)? )?(?P<created>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?))?"
+GH_PATTERN = r"^- \[(?P<status> |x|\@|\~)\] (?:(\(?P<priority>[A-Z]\)) )?(?:(?P<completed>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)? )?(?P<created>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?))?"
 KEYWORD_PATTERN = (
     r"^- (?P<status>TODO|DONE|EXPIRED|CANCELL?ED|NEEDS-ACTION|COMPLETED|IN-PROCESS)"
 )
@@ -35,10 +36,12 @@ def parse_status(value):
     # Valid VTODO statuses are listed in the RFC https://www.rfc-editor.org/rfc/rfc5545#section-3.8.1.11
     match value.upper():
         # We mark cancelled as completed because Thunderbird shows cancelled tasks https://bugzilla.mozilla.org/show_bug.cgi?id=382363
-        case "CANCELLED" | "EXPIRED" | "DONE" | "X":
+        case "CANCELLED" | "EXPIRED" | "DONE" | "X" | "~" :
             return "COMPLETED"
         case "TODO" | " ":
             return ""
+        case "@":
+            return "IN-PROGRESS"
         case _:
             raise Exception("Status not recognized: {}".format(value))
 
