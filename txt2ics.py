@@ -89,17 +89,14 @@ def make_todo(line):
     return todo
 
 
-def make_calendar(infile):
+def make_calendar(args):
     cal = Calendar()
-    for line in infile:
-        todo = make_todo(line)
-        if todo:
-            cal.add_component(todo)
-    return cal
+    for infile in args.infile:
+        for line in infile:
+            todo = make_todo(line)
+            if todo:
+                cal.add_component(todo)
 
-
-def txt2ics(args):
-    cal = make_calendar(args.infile)
     try:
         # line endings are part of the iCal standard, so if we're writing to a file
         # we need to write the bytes.
@@ -117,6 +114,7 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument(
     "infile",
+    nargs="*",
     type=argparse.FileType("r", encoding="utf-8"),
     default=os.getenv("infile"),
 )
@@ -124,4 +122,4 @@ parser.add_argument(
     "--outfile", type=argparse.FileType("wb"), default=os.getenv("outfile") or "-"
 )
 
-txt2ics(parser.parse_args())
+make_calendar(parser.parse_args())
