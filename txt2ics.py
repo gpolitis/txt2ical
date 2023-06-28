@@ -91,8 +91,8 @@ def make_todo(line):
 
 def make_calendar(args):
     cal = Calendar()
-    for infile in args.infile:
-        for line in infile:
+    if args.infile:
+        for line in args.infile:
             todo = make_todo(line)
             if todo:
                 cal.add_component(todo)
@@ -114,7 +114,7 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument(
     "infile",
-    nargs="*",
+    nargs="?",
     type=argparse.FileType("r", encoding="utf-8"),
     default=os.getenv("infile"),
 )
