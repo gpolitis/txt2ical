@@ -19,16 +19,18 @@ import hashlib
 TAGS_REGEX = r"([^\s]+):([^\s]+)"
 DATE_REGEX = r"([0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?)"
 
+
 def parse_date(value):
     rematch = re.match(DATE_REGEX, value)
     return dateutil.parser.isoparse(rematch.group(1))
+
 
 TAG_PARSE = {
     "due": parse_date,
     "start": parse_date,
     "dtstamp": parse_date,
     "location": lambda value: value,
-    "categories": lambda value: value.split(',')
+    "categories": lambda value: value.split(","),
 }
 
 STATUS_REGEX = r"^- \[( |x)\]"
