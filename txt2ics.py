@@ -15,12 +15,12 @@ import hashlib
 
 # TODO add support for contexts (words that start with @) and projects (words that start with +).
 
-TAGS_REGEX = r"([^\s]+):([^\s]+)"
-DATE_REGEX = r"([0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?)"
+TAGS_PATTERN = r"([^\s]+):([^\s]+)"
+DATE_PATTERN = r"([0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?)"
 
 
 def parse_date(value):
-    rematch = re.match(DATE_REGEX, value)
+    rematch = re.match(DATE_PATTERN, value)
     return dateutil.parser.isoparse(rematch.group(1))
 
 
@@ -35,11 +35,11 @@ TAG_PARSE = {
     "categories": lambda value: value.split(","),
 }
 
-GH_REGEX = r"^- \[(?P<status> |x)\] (?:(\(?P<priority>[A-Z]\)) )?(?:(?P<completed>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?)( (?P<created>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?))?)?"
-KEYWORD_REGEX = (
+GH_PATTERN = r"^- \[(?P<status> |x)\] (?:(\(?P<priority>[A-Z]\)) )?(?:(?P<completed>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?)( (?P<created>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?))?)?"
+KEYWORD_PATTERN = (
     r"^- (?P<status>TODO|DONE|EXPIRED|CANCELLED|NEEDS-ACTION|COMPLETED|IN-PROCESS)"
 )
-TDTXT_REGEX = r"^- (?:(?P<status>x) )?(?:(\(?P<priority>[A-Z]\)) )?(?:(?P<completed>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?)( (?P<created>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?))?)"
+TDTXT_PATTERN = r"^- (?:(?P<status>x) )?(?:(\(?P<priority>[A-Z]\)) )?(?:(?P<completed>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?)( (?P<created>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?))?)"
 
 # Valid VTODO statuses are listed in the RFC https://www.rfc-editor.org/rfc/rfc5545#section-3.8.1.11
 # We mark cancelled as completed because Thunderbird shows cancelled tasks https://bugzilla.mozilla.org/show_bug.cgi?id=382363
@@ -57,17 +57,17 @@ STATUS_MAP = {
 def make_todo(line):
     tags = dict()
 
-    rematch = re.match(GH_REGEX, line, re.IGNORECASE)
+    rematch = re.match(GH_PATTERN, line, re.IGNORECASE)
     if rematch:
         # matched a Github-style task.
         tags.update(rematch.groupdict())
     else:
-        rematch = re.match(KEYWORD_REGEX, line, re.IGNORECASE)
+        rematch = re.match(KEYWORD_PATTERN, line, re.IGNORECASE)
         if rematch:
             # matched a keyword-style task.
             tags.update(rematch.groupdict())
         else:
-            rematch = re.match(TDTXT_REGEX, line, re.IGNORECASE)
+            rematch = re.match(TDTXT_PATTERN, line, re.IGNORECASE)
             if rematch:
                 # matched a todo.txt style task.
                 tags.update(rematch.groupdict())
@@ -82,7 +82,7 @@ def make_todo(line):
 
     todo = Todo()
 
-    tags.update(dict(re.findall(TAGS_REGEX, summary)))
+    tags.update(dict(re.findall(TAGS_PATTERN, summary)))
 
     # map various parsed tags into vtodo tags.
     for key, value in tags.items():
