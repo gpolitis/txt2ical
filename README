@@ -1,4 +1,4 @@
-A super-tiny utility that converts your todo.txt file into an iCalendar file
-file. You would run it like this:
+A super-tiny utility that converts your todo.txt file into an iCalendar file. 
+You would run it like this:
 
     ./txt2ics.py todo.md
