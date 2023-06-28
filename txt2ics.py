@@ -17,6 +17,11 @@ import hashlib
 
 TAGS_PATTERN = r"([^\s]+):([^\s]+)"
 DATE_PATTERN = r"([0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?)"
+GH_PATTERN = r"^- \[(?P<status> |x)\] (?:(\(?P<priority>[A-Z]\)) )?(?:(?P<completed>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?)( (?P<created>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?))?)?"
+KEYWORD_PATTERN = (
+    r"^- (?P<status>TODO|DONE|EXPIRED|CANCELL?ED|NEEDS-ACTION|COMPLETED|IN-PROCESS)"
+)
+TDTXT_PATTERN = r"^- (?:(?P<status>x) )?(?:(\(?P<priority>[A-Z]\)) )?(?:(?P<completed>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?)( (?P<created>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?))?)"
 
 
 def parse_date(value):
@@ -24,33 +29,27 @@ def parse_date(value):
     return dateutil.parser.isoparse(rematch.group(1))
 
 
+def parse_status(value):
+    # Valid VTODO statuses are listed in the RFC https://www.rfc-editor.org/rfc/rfc5545#section-3.8.1.11
+    match value.upper():
+        # We mark cancelled as completed because Thunderbird shows cancelled tasks https://bugzilla.mozilla.org/show_bug.cgi?id=382363
+        case "CANCELLED" | "EXPIRED" | "DONE" | "X":
+            return "COMPLETED"
+        case "TODO" | " ":
+            return ""
+        case _:
+            raise Exception("Status not recognized: {}".format(value))
+
+
 TAG_PARSE = {
     "created": parse_date,
     "completed": parse_date,
-    "status": lambda value: STATUS_MAP[value],
+    "status": parse_status,
     "due": parse_date,
     "start": parse_date,
     "dtstamp": parse_date,
     "location": lambda value: value,
     "categories": lambda value: value.split(","),
-}
-
-GH_PATTERN = r"^- \[(?P<status> |x)\] (?:(\(?P<priority>[A-Z]\)) )?(?:(?P<completed>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?)( (?P<created>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?))?)?"
-KEYWORD_PATTERN = (
-    r"^- (?P<status>TODO|DONE|EXPIRED|CANCELLED|NEEDS-ACTION|COMPLETED|IN-PROCESS)"
-)
-TDTXT_PATTERN = r"^- (?:(?P<status>x) )?(?:(\(?P<priority>[A-Z]\)) )?(?:(?P<completed>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?)( (?P<created>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?))?)"
-
-# Valid VTODO statuses are listed in the RFC https://www.rfc-editor.org/rfc/rfc5545#section-3.8.1.11
-# We mark cancelled as completed because Thunderbird shows cancelled tasks https://bugzilla.mozilla.org/show_bug.cgi?id=382363
-STATUS_MAP = {
-    "x ": "COMPLETED",
-    "x": "COMPLETED",
-    " ": "",
-    "TODO": "",
-    "DONE": "COMPLETED",
-    "EXPIRED": "COMPLETED",
-    "CANCELLED": "COMPLETED",
 }
 
 
