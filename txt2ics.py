@@ -13,27 +13,22 @@ import hashlib
 # logging.basicConfig()
 # logging.getLogger().setLevel(logging.DEBUG)
 
-OPTIONAL_FIELDS = {
-    "due": {
-        "regex": r" due:([0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?) *",
-        "get_value": lambda rematch: dateutil.parser.isoparse(rematch.group(1)),
-    },
-    "start": {
-        "regex": r" start:([0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?) *",
-        "get_value": lambda rematch: dateutil.parser.isoparse(rematch.group(1)),
-    },
-    "dtstamp": {
-        "regex": r" dtstamp:([0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?) *",
-        "get_value": lambda rematch: dateutil.parser.isoparse(rematch.group(1)),
-    },
-    "location": {
-        "regex": r" location:([^\s]+) *",
-        "get_value": lambda rematch: rematch.group(1),
-    },
-    "categories": {
-        "regex": r" categories:([^\s]+) *",
-        "get_value": lambda rematch: rematch.group(1).split(','),
-    }
+# TODO add support for created & completed dates.
+# TODO add support for contexts (words that start with @) and projects (words that start with +).
+
+TAGS_REGEX = r"([^\s]+):([^\s]+)"
+DATE_REGEX = r"([0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?)"
+
+def parse_date(value):
+    rematch = re.match(DATE_REGEX, value)
+    return dateutil.parser.isoparse(rematch.group(1))
+
+TAG_PARSE = {
+    "due": parse_date,
+    "start": parse_date,
+    "dtstamp": parse_date,
+    "location": lambda value: value,
+    "categories": lambda value: value.split(',')
 }
 
 STATUS_REGEX = r"^- \[( |x)\]"
@@ -52,20 +47,20 @@ KEYWORD_MAP = {
 def make_todo(line):
     rematch = re.match(STATUS_REGEX, line)
     if rematch:
-        # Github-style task.
+        # matched a Github-style task.
         status = "DONE" if rematch.group(1) == "x" else "TODO"
     else:
         rematch = re.match(KEYWORD_REGEX, line)
         if rematch:
-            # keyword-style task.
+            # matched a keyword-style task.
             status = rematch.group(1)
         else:
-            # not a task.
+            # doesn't look like a task.
             return
 
     summary = line[len(rematch.group(0)) :].strip()
     if len(summary) == 0:
-        # task without a summary.
+        # skip tasks without a summary.
         return
 
     # map keywords -> vtodo status.
@@ -73,13 +68,17 @@ def make_todo(line):
         status = KEYWORD_MAP[status]
 
     todo = Todo()
-    for field_name in OPTIONAL_FIELDS:
-        field = OPTIONAL_FIELDS[field_name]
-        rematch = re.search(field["regex"], summary)
-        if rematch:
-            todo.add(field_name, field["get_value"](rematch))
-            summary = re.sub(field["regex"], " ", summary)
+    # map todo.txt tags -> vtodo fields.
+    for key, value in re.findall(TAGS_REGEX, summary):
+        if key in TAG_PARSE:
+            parse = TAG_PARSE[key]
+            parsed_value = parse(value)
+            if value:
+                todo.add(key, parsed_value)
+                # cleanup the summary (note the space)
+                summary = summary.replace(" {}:{}".format(key, value), " ")
 
+    # generate a vtodo uid based on the summary checksum (can be useful with caldav sync)
     todo.add("uid", hashlib.sha256(line.encode("utf-8")).hexdigest())
     if not "dtstamp" in todo:
         todo.add("dtstamp", datetime.now())
