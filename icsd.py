@@ -35,7 +35,6 @@ class CalendarHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "text/calendar")
             self.end_headers()
             cal = make_calendar(infile)
-            logger.info(cal.to_ical().decode("utf-8"))
             self.wfile.write(cal.to_ical())
 
 
