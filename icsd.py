@@ -3,8 +3,11 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import os
 from lib import make_calendar
+from dotenv import load_dotenv
 import argparse
 import logging
+
+load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
