@@ -19,7 +19,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     "infile",
     nargs="?",
-    type=argparse.FileType("r", encoding="utf-8"),
+    type=str,
     default=os.getenv("infile"),
 )
 parser.add_argument("--port", type=int, default=os.getenv("port") or 8000)
@@ -29,11 +29,14 @@ args = parser.parse_args()
 
 class CalendarHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        self.send_response(200)
-        self.send_header("Content-Type", "text/calendar")
-        self.end_headers()
-        cal = make_calendar(args.infile)
-        self.wfile.write(cal.to_ical())
+        # TODO check the file exists and is readable
+        with open(file=args.infile, mode="r", encoding="utf-8") as infile:
+            self.send_response(200)
+            self.send_header("Content-Type", "text/calendar")
+            self.end_headers()
+            cal = make_calendar(infile)
+            logger.info(cal.to_ical().decode("utf-8"))
+            self.wfile.write(cal.to_ical())
 
 
 with HTTPServer((args.host, args.port), CalendarHandler) as httpd:
