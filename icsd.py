@@ -22,7 +22,7 @@ parser.add_argument(
     type=argparse.FileType("r", encoding="utf-8"),
     default=os.getenv("infile"),
 )
-parser.add_argument("--port", default=os.getenv("port") or 8000)
+parser.add_argument("--port", type=int, default=os.getenv("port") or 8000)
 parser.add_argument("--host", default=os.getenv("host") or "localhost")
 args = parser.parse_args()
 
