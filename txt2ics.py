@@ -4,6 +4,10 @@ import os
 import argparse
 from dotenv import load_dotenv
 import lib
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
 
 load_dotenv()
 

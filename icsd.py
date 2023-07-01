@@ -6,6 +6,8 @@ from lib import make_calendar
 import argparse
 import logging
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(
     description="Converts TODOs in a text file into an iCal file."
@@ -32,5 +34,5 @@ class CalendarHandler(BaseHTTPRequestHandler):
 
 
 with HTTPServer((args.host, args.port), CalendarHandler) as httpd:
-    logging.info("serving at port {}".format(args.port))
+    logger.info("serving at port {}".format(args.port))
     httpd.serve_forever()

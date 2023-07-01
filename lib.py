@@ -7,8 +7,9 @@ import re
 import hashlib
 
 import logging
-# logging.basicConfig()
-# logging.getLogger().setLevel(logging.DEBUG)
+
+logger = logging.getLogger(__name__)
+
 
 # TODO add support for [x]it! (harder because subtasks require context and icalendar does not support sub-tasks)
 # TODO add some fuzzy logic to handle minor typos
@@ -90,7 +91,7 @@ def make_todo(line):
     # map various parsed tags into vtodo tags.
     for key, value in tags.items():
         if not key in TAG_PARSE:
-            logging.info("An unknown field was detected: {}".format(key))
+            logger.info("An unknown field was detected: {}".format(key))
         if value and key in TAG_PARSE:
             parse = TAG_PARSE[key]
             parsed_value = parse(value)
