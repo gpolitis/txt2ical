@@ -20,4 +20,14 @@ parser.add_argument(
     "--outfile", type=argparse.FileType("wb"), default=os.getenv("outfile") or "-"
 )
 
-lib.make_calendar(parser.parse_args())
+args = parser.parse_args()
+cal = lib.make_calendar(args.infile)
+
+try:
+    # line endings are part of the iCal standard, so if we're writing to a file
+    # we need to write the bytes.
+    args.outfile.write(cal.to_ical())
+except TypeError:
+    # Writing to stdout is a bit different, as it requires an str on Linux. On
+    # Windows stdout accepts a byte.
+    args.outfile.write(cal.to_ical().decode("utf-8"))

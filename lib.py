@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import os
 from icalendar import Calendar, Todo
 import dateutil.parser
 from datetime import datetime
@@ -117,19 +116,11 @@ def make_todo(line):
     return todo
 
 
-def make_calendar(args):
+def make_calendar(infile):
     cal = Calendar()
-    if args.infile:
-        for line in args.infile:
+    if infile:
+        for line in infile:
             todo = make_todo(line)
             if todo:
                 cal.add_component(todo)
-
-    try:
-        # line endings are part of the iCal standard, so if we're writing to a file
-        # we need to write the bytes.
-        args.outfile.write(cal.to_ical())
-    except TypeError:
-        # Writing to stdout is a bit different, as it requires an str on Linux. On
-        # Windows stdout accepts a byte.
-        args.outfile.write(cal.to_ical().decode("utf-8"))
+    return cal
