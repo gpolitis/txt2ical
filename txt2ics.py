@@ -9,16 +9,18 @@ import re
 from dotenv import load_dotenv
 import hashlib
 
-# import logging
+import logging
 # logging.basicConfig()
 # logging.getLogger().setLevel(logging.DEBUG)
 
-# TODO add support for todo.txt contexts (words that start with @) and projects (words that start with +).
 # TODO add support for [x]it! (harder because subtasks require context and icalendar does not support sub-tasks)
 # TODO add some fuzzy logic to handle minor typos
 # TODO add proper unit tests
+# TODO add http a server
 
-TAGS_PATTERN = r"([^\s]+):([^\s]+)"
+TAGS_PATTERN = r"([^\s:]+):(?!\/\/)([^\s]+)"
+PROJECT_PATTERN = r" \+(\w+)"
+CONTEXT_PATTERN = r" @(\w+)"
 DATE_PATTERN = r"([0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?)"
 GH_PATTERN = r"^- \[(?P<status> |x|\@|\~)\] (?:(\(?P<priority>[A-Z]\)) )?(?:(?P<completed>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)? )?(?P<created>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?))?"
 KEYWORD_PATTERN = (
@@ -90,6 +92,8 @@ def make_todo(line):
 
     # map various parsed tags into vtodo tags.
     for key, value in tags.items():
+        if not key in TAG_PARSE:
+            logging.info("An unknown field was detected: {}".format(key))
         if value and key in TAG_PARSE:
             parse = TAG_PARSE[key]
             parsed_value = parse(value)
@@ -98,11 +102,20 @@ def make_todo(line):
                 # cleanup the summary (note the space)
                 summary = summary.replace(" {}:{}".format(key, value), " ")
 
+    todo.add("categories", re.findall(PROJECT_PATTERN, summary))
+    summary = re.sub(PROJECT_PATTERN, "", summary)
+
+    todo.add("resources", re.findall(CONTEXT_PATTERN, summary))
+    summary = re.sub(CONTEXT_PATTERN, "", summary)
+
+    # todo.add("categories", [rematch.group(0) for rematch in re.findall(PROJECT_PATTERN, summary)])
     # generate a vtodo uid based on the summary checksum (can be useful with caldav sync)
     todo.add("uid", hashlib.sha256(line.encode("utf-8")).hexdigest())
     if not "dtstamp" in todo:
         todo.add("dtstamp", datetime.now())
-    todo["summary"] = summary
+
+    # FIXME if we require a strip here it could mean our patterns are not perfect
+    todo.add("summary", summary.strip())
     return todo
 
 
