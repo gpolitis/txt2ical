@@ -5,4 +5,4 @@ You would run it like this:
 
 You can also serve the file with HTTP
 
-    ./icsd todo.md
+    ./icsd.py todo.md
