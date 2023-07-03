@@ -20,11 +20,15 @@ TAGS_PATTERN = r"([^\s:]+):(?!\/\/)([^\s]+)"
 PROJECT_PATTERN = r" \+(\w+)"
 CONTEXT_PATTERN = r" @(\w+)"
 DATE_PATTERN = r"([0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?)"
-GH_PATTERN = r"^- \[(?P<status> |x|\@|\~)\] (?:(\(?P<priority>[A-Z]\)) )?(?:(?P<completed>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)? )?(?P<created>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?))?"
-KEYWORD_PATTERN = (
-    r"^- (?P<status>TODO|DONE|EXPIRED|CANCELL?ED|NEEDS-ACTION|COMPLETED|IN-PROCESS)"
-)
-TDTXT_PATTERN = r"^- (?:(?P<status>x) )?(?:(\(?P<priority>[A-Z]\)) )?(?:(?P<completed>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)? )?(?P<created>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?))"
+STATUS_PATTERNS = [
+    # GH_PATTERN
+    r"^- \[(?P<status> |x|\@|\~)\] (?:(\(?P<priority>[A-Z]\)) )?(?:(?P<completed>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)? )?(?P<created>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?))?",
+    # KEYWORD_PATTERN
+    r"^- (?P<status>TODO|DONE|EXPIRED|CANCELL?ED|NEEDS-ACTION|COMPLETED|IN-PROCESS)",
+    # TDTXT_PATTERN
+    r"^- (?:(?P<status>x) )?(?:(\(?P<priority>[A-Z]\)) )?(?:(?P<completed>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)? )?(?P<created>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?))",
+]
+DESCRIPTION_PATTERN = r" \/\/ (.+)$"
 
 
 def parse_date(value):
@@ -36,7 +40,7 @@ def parse_status(value):
     # Valid VTODO statuses are listed in the RFC https://www.rfc-editor.org/rfc/rfc5545#section-3.8.1.11
     match value.upper():
         # We mark cancelled as completed because Thunderbird shows cancelled tasks https://bugzilla.mozilla.org/show_bug.cgi?id=382363
-        case "CANCELLED" | "EXPIRED" | "DONE" | "X" | "~" :
+        case "CANCELLED" | "EXPIRED" | "DONE" | "X" | "~":
             return "COMPLETED"
         case "TODO" | " ":
             return ""
@@ -61,30 +65,23 @@ TAG_PARSE = {
 def make_todo(line):
     tags = dict()
 
-    rematch = re.match(GH_PATTERN, line, re.IGNORECASE)
-    if rematch:
-        # matched a Github-style task.
-        tags.update(rematch.groupdict())
-    else:
-        rematch = re.match(KEYWORD_PATTERN, line, re.IGNORECASE)
+    for status_pattern in STATUS_PATTERNS:
+        rematch = re.match(status_pattern, line, re.IGNORECASE)
         if rematch:
-            # matched a keyword-style task.
             tags.update(rematch.groupdict())
-        else:
-            rematch = re.match(TDTXT_PATTERN, line, re.IGNORECASE)
-            if rematch:
-                # matched a todo.txt style task.
-                tags.update(rematch.groupdict())
-            else:
-                # doesn't look like a task.
-                return
+            summary = re.sub(status_pattern, "", line)
+            break
 
-    summary = line[len(rematch.group(0)) :].strip()
-    if len(summary) == 0:
+    if not rematch:
         # skip tasks without a summary.
         return
 
     todo = Todo()
+
+    rematch = re.search(DESCRIPTION_PATTERN, summary)
+    if rematch:
+        todo.add("description", rematch.group(1))
+        summary = re.sub(DESCRIPTION_PATTERN, "", summary)
 
     tags.update(dict(re.findall(TAGS_PATTERN, summary)))
 
@@ -106,7 +103,6 @@ def make_todo(line):
     todo.add("resources", re.findall(CONTEXT_PATTERN, summary))
     summary = re.sub(CONTEXT_PATTERN, "", summary)
 
-    # todo.add("categories", [rematch.group(0) for rematch in re.findall(PROJECT_PATTERN, summary)])
     # generate a vtodo uid based on the summary checksum (can be useful with caldav sync)
     todo.add("uid", hashlib.sha256(line.encode("utf-8")).hexdigest())
     if not "dtstamp" in todo:
