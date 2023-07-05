@@ -30,10 +30,15 @@ STATUS_PATTERNS = [
 ]
 DESCRIPTION_PATTERN = r" \/\/ (.+)$"
 
+STATUS_EMOJIS = {"IN-PROGRESS": "🚧", "CANCELLED": "❌"}
 
+# setting a default time to 23:59 makes due dates inclusive
+DEFAULT_DATETIME = dateutil.parser.isoparse("1970-01-01 23:59")
 def parse_date(value):
+    # TODO add support for human readable dates https://github.com/scrapinghub/dateparser. Note that dateutil seems to have some fuzzy parsing.
     rematch = re.match(DATE_PATTERN, value)
-    return dateutil.parser.isoparse(rematch.group(1))
+    date = dateutil.parser.parse(rematch.group(1), default=DEFAULT_DATETIME)
+    return date
 
 
 def parse_status(value):
@@ -78,11 +83,6 @@ def make_todo(line):
 
     todo = Todo()
 
-    rematch = re.search(DESCRIPTION_PATTERN, summary)
-    if rematch:
-        todo.add("description", rematch.group(1))
-        summary = re.sub(DESCRIPTION_PATTERN, "", summary)
-
     tags.update(dict(re.findall(TAGS_PATTERN, summary)))
 
     # map various parsed tags into vtodo tags.
@@ -94,8 +94,8 @@ def make_todo(line):
             parsed_value = parse(value)
             if parsed_value:
                 todo.add(key, parsed_value)
-                # cleanup the summary (note the space)
-                summary = summary.replace(" {}:{}".format(key, value), " ")
+                # cleanup the summary (note the space) <- FIXME what if there is no space?
+                summary = summary.replace("{}:{}".format(key, value), " ")
 
     todo.add("categories", re.findall(PROJECT_PATTERN, summary))
     summary = re.sub(PROJECT_PATTERN, "", summary)
@@ -107,6 +107,14 @@ def make_todo(line):
     todo.add("uid", hashlib.sha256(line.encode("utf-8")).hexdigest())
     if not "dtstamp" in todo:
         todo.add("dtstamp", datetime.now())
+
+    rematch = re.search(DESCRIPTION_PATTERN, summary)
+    if rematch:
+        todo.add("description", rematch.group(1))
+        summary = re.sub(DESCRIPTION_PATTERN, "", summary)
+
+    if "status" in todo and todo["status"] in STATUS_EMOJIS:
+        summary = "{} {}".format(STATUS_EMOJIS[todo["status"]], summary)
 
     # FIXME if we require a strip here it could mean our patterns are not perfect
     todo.add("summary", summary.strip())
