@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 # TODO add http a server
 
 TAGS_PATTERN = r"([^\s:]+):(?!\/\/)([^\s]+)"
-PROJECT_PATTERN = r" \+(\w+)"
-CONTEXT_PATTERN = r" @(\w+)"
+PROJECT_PATTERN = r" \+([^\s]+)"
+CONTEXT_PATTERN = r" @([^\s]+)"
 DATE_PATTERN = r"([0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?)"
 STATUS_PATTERNS = [
     # GH_PATTERN
