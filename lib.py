@@ -22,15 +22,15 @@ CONTEXT_PATTERN = r" @([^\s]+)"
 DATE_PATTERN = r"([0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?)"
 STATUS_PATTERNS = [
     # GH_PATTERN
-    r"^- \[(?P<status> |x|\@|\~)\] (?:(\(?P<priority>[A-Z]\)) )?(?:(?P<completed>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)? )?(?P<created>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?))?",
+    r"^- \[(?P<status> |x|\@|\~|\^)\] (?:(\(?P<priority>[A-Z]\)) )?(?:(?P<completed>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)? )?(?P<created>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?))?",
     # KEYWORD_PATTERN
-    r"^- (?P<status>TODO|DONE|EXPIRED|CANCELL?ED|NEEDS-ACTION|COMPLETED|IN-PROCESS)",
+    r"^- (?P<status>TODO|DONE|EXPIRED|CANCELL?ED|NEEDS-ACTION|COMPLETED|IN-PROCESS|DELEGATED)",
     # TDTXT_PATTERN
     r"^- (?:(?P<status>x) )?(?:(\(?P<priority>[A-Z]\)) )?(?:(?P<completed>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)? )?(?P<created>[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?))",
 ]
 DESCRIPTION_PATTERN = r" \/\/ (.+)$"
 
-STATUS_EMOJIS = {"IN-PROGRESS": "🚧", "CANCELLED": "❌"}
+STATUS_EMOJIS = {"IN-PROCESS": "🚧", "CANCELLED": "❌", "DELEGATED": "↗️"}
 
 # setting a default time to 23:59 makes due dates inclusive
 DEFAULT_DATETIME = dateutil.parser.isoparse("1970-01-01 23:59")
@@ -48,9 +48,11 @@ def parse_status(value):
         case "CANCELLED" | "EXPIRED" | "DONE" | "X" | "~":
             return "COMPLETED"
         case "TODO" | " ":
-            return ""
+            return "NEEDS-ACTION"
         case "@":
-            return "IN-PROGRESS"
+            return "IN-PROCESS"
+        case "^":
+            return "DELEGATED"
         case _:
             raise Exception("Status not recognized: {}".format(value))
 
