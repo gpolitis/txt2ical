@@ -99,11 +99,15 @@ def make_todo(line):
                 # cleanup the summary (note the space) <- FIXME what if there is no space?
                 summary = summary.replace("{}:{}".format(key, value), " ")
 
-    todo.add("categories", re.findall(PROJECT_PATTERN, summary))
-    summary = re.sub(PROJECT_PATTERN, "", summary)
+    categories = re.findall(PROJECT_PATTERN, summary)
+    if categories:
+        todo.add("categories", )
+        summary = re.sub(PROJECT_PATTERN, "", summary)
 
-    todo.add("resources", re.findall(CONTEXT_PATTERN, summary))
-    summary = re.sub(CONTEXT_PATTERN, "", summary)
+    resources = re.findall(CONTEXT_PATTERN, summary)
+    if resources:
+        todo.add("resources", resources)
+        summary = re.sub(CONTEXT_PATTERN, "", summary)
 
     # generate a vtodo uid based on the summary checksum (can be useful with caldav sync)
     todo.add("uid", hashlib.sha256(line.encode("utf-8")).hexdigest())
