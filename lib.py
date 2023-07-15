@@ -101,7 +101,7 @@ def make_todo(line):
 
     categories = re.findall(PROJECT_PATTERN, summary)
     if categories:
-        todo.add("categories", )
+        todo.add("categories", categories)
         summary = re.sub(PROJECT_PATTERN, "", summary)
 
     resources = re.findall(CONTEXT_PATTERN, summary)
