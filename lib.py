@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 # TODO add proper unit tests
 # TODO add http a server
 
-TAGS_PATTERN = r"([^\s:]+):(?!\/\/)([^\s]+)"
+TAGS_PATTERN = r"([^\s:]{3,}):(?!\/\/)([^\s]+)"
 PROJECT_PATTERN = r" \+([^\s]+)"
 CONTEXT_PATTERN = r" @([^\s]+)"
 DATE_PATTERN = r"([0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?)"
