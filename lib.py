@@ -14,9 +14,12 @@ logger = logging.getLogger(__name__)
 # TODO add support for [x]it! (harder because subtasks require context and icalendar does not support sub-tasks)
 # TODO add some fuzzy logic to handle minor typos
 # TODO add proper unit tests
-# TODO add http a server
+# TODO parsing context support via ```tasklist or # 2023-04-04 ...
+# TODO support subtasks
+# TODO full caldav support
+# TODO add support for reminders/alarms
 
-TAGS_PATTERN = r"([^\s:]{3,}):(?!\/\/)([^\s]+)"
+TAGS_PATTERN = r"([^\s:]{3,}):(?!\/\/)([^\s]{3,})"
 PROJECT_PATTERN = r" \+([^\s]+)"
 CONTEXT_PATTERN = r" @([^\s]+)"
 DATE_PATTERN = r"([0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?)"
@@ -56,13 +59,17 @@ def parse_status(value):
         case _:
             raise Exception("Status not recognized: {}".format(value))
 
+TAG_MAP = {
+    "done": "completed",
+    "started": "dtstart"
+}
 
 TAG_PARSE = {
     "created": parse_date,
     "completed": parse_date,
     "status": parse_status,
     "due": parse_date,
-    "start": parse_date,
+    "dtstart": parse_date,
     "dtstamp": parse_date,
     "location": lambda value: value,
     "categories": lambda value: value.split(","),
@@ -89,6 +96,8 @@ def make_todo(line):
 
     # map various parsed tags into vtodo tags.
     for key, value in tags.items():
+        if key in TAG_MAP:
+            key = TAG_MAP[key]
         if not key in TAG_PARSE:
             logger.info("An unknown field was detected: {}".format(key))
         if value and key in TAG_PARSE:
