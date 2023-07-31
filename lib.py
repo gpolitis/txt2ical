@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 # TODO support subtasks
 # TODO full caldav support
 # TODO add support for reminders/alarms
+# TODO publish to pypi https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/
 
 TAGS_PATTERN = r"([^\s:]{3,}):(?!\/\/)([^\s]{3,})"
 PROJECT_PATTERN = r" \+([^\s]+)"
@@ -96,15 +97,14 @@ def make_todo(line):
 
     # map various parsed tags into vtodo tags.
     for key, value in tags.items():
-        if key in TAG_MAP:
-            key = TAG_MAP[key]
-        if not key in TAG_PARSE:
-            logger.info("An unknown field was detected: {}".format(key))
-        if value and key in TAG_PARSE:
-            parse = TAG_PARSE[key]
+        parsed_key = TAG_MAP[key] if key in TAG_MAP else key
+        if not parsed_key in TAG_PARSE:
+            logger.info("An unknown field was detected: {}".format(parsed_key))
+        if value and parsed_key in TAG_PARSE:
+            parse = TAG_PARSE[parsed_key]
             parsed_value = parse(value)
             if parsed_value:
-                todo.add(key, parsed_value)
+                todo.add(parsed_key, parsed_value)
                 # cleanup the summary (note the space) <- FIXME what if there is no space?
                 summary = summary.replace("{}:{}".format(key, value), " ")
 
