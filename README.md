@@ -6,3 +6,8 @@ You would run it like this:
 You can also serve the file with HTTP
 
     ./txt2icsd.py todo.md
+
+Related work (check the test file)
+
+- Markwhen
+- Todo.txt

@@ -1,3 +1,5 @@
 .env
 *.pyc
 scratch.py
+dist/
+src/txt2ics.egg-info/

@@ -1,0 +1,23 @@
+[project]
+name = "txt2ics"
+version = "0.0.1"
+authors = [
+  { name="George Politis", email="gp@superpointer.com" },
+]
+description = "A super-tiny utility that converts your todo.txt file into an iCalendar file."
+readme = "README.md"
+requires-python = ">=3.7"
+dependencies = [ "icalendar", "python-dotenv" ]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/gpolitis/txt2ics"
+"Bug Tracker" = "https://github.com/gpolitis/txt2ics/issues"
+
+[project.scripts]
+txt2icsd = "txt2ics.txt2icsd:main_cli"
+txt2ics = "txt2ics.txt2ics:main_cli"

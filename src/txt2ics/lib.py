@@ -14,11 +14,13 @@ logger = logging.getLogger(__name__)
 # TODO add support for [x]it! (harder because subtasks require context and icalendar does not support sub-tasks)
 # TODO add some fuzzy logic to handle minor typos
 # TODO add proper unit tests
-# TODO parsing context support via ```tasklist or # 2023-04-04 ...
+# TODO parsing context support via ```tasklist or # 2023-04-04 ... maybe I need a extensible markdown parser, like marco?
 # TODO support subtasks
+# TODO support for priority
 # TODO full caldav support
-# TODO add support for reminders/alarms
+# TODO add support for reminders
 # TODO publish to pypi https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/
+# Is this completely superseeded from markwhen?
 
 TAGS_PATTERN = r"([^\s:]{3,}):(?!\/\/)([^\s]{3,})"
 PROJECT_PATTERN = r" \+([^\s]+)"
