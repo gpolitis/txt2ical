@@ -49,18 +49,17 @@ def parse_date(value):
 
 def parse_status(value):
     # Valid VTODO statuses are listed in the RFC https://www.rfc-editor.org/rfc/rfc5545#section-3.8.1.11
-    match value.upper():
+    if value.upper() in [ "CANCELLED", "EXPIRED", "DONE", "X", "~"]:
         # We mark cancelled as completed because Thunderbird shows cancelled tasks https://bugzilla.mozilla.org/show_bug.cgi?id=382363
-        case "CANCELLED" | "EXPIRED" | "DONE" | "X" | "~":
-            return "COMPLETED"
-        case "TODO" | " ":
-            return "NEEDS-ACTION"
-        case "@":
-            return "IN-PROCESS"
-        case "^":
-            return "DELEGATED"
-        case _:
-            raise Exception("Status not recognized: {}".format(value))
+        return "COMPLETED"
+    elif value.upper() in ["TODO", " "]:
+        return "NEEDS-ACTION"
+    elif value.upper() in ["@"]:
+        return "IN-PROCESS"
+    elif value.upper() in ["^"]:
+        return "DELEGATED"
+    else:
+        raise Exception("Status not recognized: {}".format(value))
 
 TAG_MAP = {
     "done": "completed",
