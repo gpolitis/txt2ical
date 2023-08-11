@@ -1,6 +1,6 @@
 [project]
 name = "txt2ics"
-version = "0.0.1"
+version = "0.0.3"
 authors = [
   { name="George Politis", email="gp@superpointer.com" },
 ]
