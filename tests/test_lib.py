@@ -1,5 +1,5 @@
 import unittest
-from src.txt2ics.lib import make_calendar
+from txt2ics import make_calendar
 
 class BasicTestCase(unittest.TestCase):
 
